@@ -1,0 +1,15 @@
+{
+  "presentes": [
+    {
+      "id": "001",
+      "title": "Aparelho de Jantar - Porto Brasil",
+      "imageUrl": "https://portobrasil.vtexassets.com/arquivos/ids/180018-1200-auto?v=638278773941030000&width=1200&height=auto&aspect=true",
+      "productUrl": "https://www.portobrasilceramica.com.br/aparelho-de-jantar-30-pecas-organico-preto-matte-para-6-pessoas-b/p"
+    }
+  ],
+  "configuracoes": {
+    "carregarDadosIniciais": true,
+    "versao": "1.0",
+    "ultimaAtualizacao": "2025-08-07"
+  }
+}

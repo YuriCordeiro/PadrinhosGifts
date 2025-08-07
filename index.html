@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Presentes - Padrinhos</title>
+    <meta name="description" content="Lista de presentes elegante para nossos queridos padrinhos">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/styles-public.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Carregando nossa lista especial...</div>
+    </div>
+
+    <!-- Área Principal -->
+    <div class="container fade-in">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="welcome-section">
+                        <h2 class="welcome-title">Olá padrinho!</h2>
+                        
+                        <p class="welcome-description">
+                            Caso você prefira, criamos essa <strong>Lista de Presentes Personalizada</strong> para facilitar as escolhas de vocês!
+                        </p>
+                        
+                        <!-- <div class="info-section">
+                            <p class="info-primary">
+                                A diferença dessa lista para a lista do nosso site é que aqui já possui os links dos produtos que nós queremos de fato!
+                            </p>
+                            
+                            <p class="info-secondary">
+                                Já a lista do site é revertida em dinheiro
+                            </p>
+                        </div> -->
+                        
+                        <p class="instruction-text">
+                            Basta clicar em <span><strong>"Ver Produto"</strong></span> para ser redirecionado para o link do produto!
+                        </p>
+                    </div>
+                    <div class="sync-indicator" id="syncIndicator">
+                        <span class="sync-dot"></span>
+                        <span class="sync-text">Lista atualizada automaticamente</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="gifts-section">
+            <div class="section-title">
+                <h2>Nossos Presentes Especiais</h2>
+            </div>
+            
+            <div class="gifts-grid" id="giftsGrid">
+                <!-- Os presentes serão inseridos aqui dinamicamente -->
+            </div>
+
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">💝</div>
+                <h3>Lista sendo preparada com carinho</h3>
+                <p>Em breve nossa lista estará completa com presentes especiais escolhidos para vocês!</p>
+                <div class="empty-decorations">
+                    <span class="decoration">✨</span>
+                    <span class="decoration">♥</span>
+                    <span class="decoration">✨</span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="footer-message">♥ Com amor, Carol e Yuri.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

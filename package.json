@@ -1,0 +1,32 @@
+{
+  "name": "padrinhos-gifts",
+  "version": "1.0.0",
+  "description": "Lista de Presentes elegante para Padrinhos com integração Google Sheets",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server . -p 3000",
+    "start": "npx http-server . -p 3000",
+    "build": "echo 'Build concluído - aplicação estática pronta!'"
+  },
+  "keywords": [
+    "lista-presentes",
+    "casamento",
+    "padrinhos",
+    "google-sheets",
+    "pwa"
+  ],
+  "author": "Carol & Yuri",
+  "license": "MIT",
+  "homepage": "https://github.com/seu-usuario/padrinhos-gifts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/padrinhos-gifts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seu-usuario/padrinhos-gifts/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {}
+}

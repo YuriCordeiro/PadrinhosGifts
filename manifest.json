@@ -1,0 +1,32 @@
+{
+    "name": "Lista de Presentes - Padrinhos",
+    "short_name": "Padrinhos Gifts",
+    "description": "Aplicação elegante para gerenciar lista de presentes para padrinhos",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#f5f5f5",
+    "theme_color": "#000000",
+    "orientation": "portrait-primary",
+    "categories": ["lifestyle", "utilities"],
+    "lang": "pt-BR",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiMwMDAwMDAiLz4KPHN2ZyB4PSIxMjgiIHk9IjEyOCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJub25lIj4KPHN2ZyB4PSI2NCIgeT0iNjQiIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiPgo8cGF0aCBkPSJNMTIgMkwxMyA5SDIxTDE1IDEzTDE2IDIwTDEyIDE2TDggMjBMOSAxM0wzIDlIMTFMMTIgMloiIGZpbGw9IiNmZmZmZmYiLz4KPC9zdmc+CjxjaXJjbGUgY3g9IjY0IiBjeT0iMTkyIiByPSIxNiIgZmlsbD0iI2ZmZmZmZiIvPgo8Y2lyY2xlIGN4PSIxOTIiIGN5PSIxOTIiIHI9IjE2IiBmaWxsPSIjZmZmZmZmIi8+CjxjaXJjbGUgY3g9IjEyOCIgY3k9IjE5MiIgcj0iMTYiIGZpbGw9IiNmZmZmZmYiLz4KPC9zdmc+Cjwvc3ZnPgo=",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMwMDAwMDAiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHN2ZyB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHN2ZyB4PSI2IiB5PSI2IiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMiAyTDEzIDlIMjFMMTUgMTNMMTYgMjBMMTIgMTZMOCAyMEw5IDEzTDMgOUgxMUwxMiAyWiIgZmlsbD0iI2ZmZmZmZiIvPgo8L3N2Zz4KPC9zdmc+CjwvZXZnPgo8L3N2Zz4KPC9zdmc+Cjwvc3ZnPgo=",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiMwMDAwMDAiLz4KPHN2ZyB4PSIxMjgiIHk9IjEyOCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJub25lIj4KPHN2ZyB4PSI2NCIgeT0iNjQiIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiPgo8cGF0aCBkPSJNMTIgMkwxMyA5SDIxTDE1IDEzTDE2IDIwTDEyIDE2TDggMjBMOSAxM0wzIDlIMTFMMTIgMloiIGZpbGw9IiNmZmZmZmYiLz4KPC9zdmc+CjxjaXJjbGUgY3g9IjY0IiBjeT0iMTkyIiByPSIxNiIgZmlsbD0iI2ZmZmZmZiIvPgo8Y2lyY2xlIGN4PSIxOTIiIGN5PSIxOTIiIHI9IjE2IiBmaWxsPSIjZmZmZmZmIi8+CjxjaXJjbGUgY3g9IjEyOCIgY3k9IjE5MiIgcj0iMTYiIGZpbGw9IiNmZmZmZmYiLz4KPC9zdmc+Cjwvc3ZnPgo=",
+            "sizes": "144x144",
+            "type": "image/svg+xml"
+        }
+    ]
+}

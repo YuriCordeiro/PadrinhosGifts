@@ -1,0 +1,46 @@
+# Configurações para deploy no Netlify
+
+[build]
+  # Diretório de publicação (pasta raiz do projeto)
+  publish = "."
+
+# Configurações de headers para segurança e performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache para arquivos estáticos
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000" # 30 dias
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000" # 30 dias
+
+[[headers]]
+  for = "*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000" # 30 dias
+
+[[headers]]
+  for = "*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000" # 30 dias
+
+# Redirecionamentos (caso necessário)
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/lista"
+  to = "/public.html"
+  status = 200
