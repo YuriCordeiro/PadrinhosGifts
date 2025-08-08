@@ -26,11 +26,26 @@ const SHEETS_CONFIG = {
     // 🔧 SUBSTITUA pelo ID da sua planilha Google Sheets
     spreadsheetId: '1IYr_m43FUPYilTQz_bICKZjHTPg7CUWVXVlS09N-LJI',
     
-    // 🌐 URL automática para exportar como CSV (com proxy CORS)
-    get csvUrl() {
+    // 🌐 URLs com múltiplos proxies CORS para fallback
+    get csvUrls() {
         const baseUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv&gid=0`;
-        // Usa proxy CORS para resolver problemas de acesso local
-        return `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
+        return [
+            // Proxy 1: AllOrigins (principal)
+            `https://api.allorigins.win/get?url=${encodeURIComponent(baseUrl)}`,
+            // Proxy 2: AllOrigins raw
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`,
+            // Proxy 3: CORS Anywhere (público)
+            `https://cors-anywhere.herokuapp.com/${baseUrl}`,
+            // Proxy 4: Proxy CORS alternativo
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(baseUrl)}`,
+            // Direto (pode funcionar em alguns ambientes)
+            baseUrl
+        ];
+    },
+    
+    // URL principal (primeira da lista)
+    get csvUrl() {
+        return this.csvUrls[0];
     },
     
     // 🔗 URL para editar a planilha (NÃO ALTERE)

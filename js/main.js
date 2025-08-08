@@ -78,42 +78,80 @@ async function loadDataWithProgressiveRendering() {
         gifts = [];
         giftsGrid.innerHTML = '';
         
-        // Tenta carregar da planilha Google Sheets
-        const response = await fetch(SHEETS_CONFIG.csvUrl + '&t=' + new Date().getTime(), {
-            method: 'GET',
-            headers: {
-                'Accept': 'text/plain, text/csv, */*'
-            }
-        });
+        // Tenta carregar usando múltiplos proxies como fallback
+        const csvUrls = SHEETS_CONFIG.csvUrls;
+        let csvText = null;
+        let successUrl = null;
         
-        if (response.ok) {
-            const csvText = await response.text();
-            console.log('📋 CSV carregado, iniciando processamento progressivo...');
+        for (let i = 0; i < csvUrls.length; i++) {
+            const url = csvUrls[i];
             
-            // Processa e renderiza progressivamente
-            const validatedGifts = await parseCSVToGifts(csvText, true); // true = renderizar conforme valida
-            
-            // Salva no cache após processamento completo
-            setTimeout(() => {
-                const dataToCache = {
-                    presentes: gifts,
-                    lastUpdate: new Date().getTime()
-                };
-                localStorage.setItem('giftsData', JSON.stringify(dataToCache));
-                localStorage.setItem('lastSyncTime', new Date().getTime().toString());
-                lastSyncTime = new Date().getTime();
+            try {
+                console.log(`📡 Tentativa ${i + 1}/${csvUrls.length}: ${url.includes('allorigins') ? 'AllOrigins' : url.includes('cors-anywhere') ? 'CORS Anywhere' : url.includes('codetabs') ? 'CodeTabs' : 'Direto'}`);
                 
-                console.log('💾 Dados salvos no cache (' + gifts.length + ' presentes)');
-            }, 2000); // Delay para garantir que todos os itens foram processados
-            
-            return true;
-        } else {
-            console.log('Erro ao buscar dados do Google Sheets');
+                const response = await fetch(url + '&t=' + new Date().getTime(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/plain, text/csv, */*'
+                    }
+                });
+                
+                if (response.ok) {
+                    const responseText = await response.text();
+                    
+                    // Se usar AllOrigins com JSON wrapper, extrai o content
+                    if (url.includes('api.allorigins.win/get')) {
+                        try {
+                            const jsonData = JSON.parse(responseText);
+                            csvText = jsonData.contents;
+                        } catch (e) {
+                            csvText = responseText;
+                        }
+                    } else {
+                        csvText = responseText;
+                    }
+                    
+                    // Verifica se o CSV é válido (tem pelo menos uma linha com dados)
+                    if (csvText && csvText.includes(',') && csvText.split('\n').length > 1) {
+                        successUrl = url;
+                        console.log('✅ Dados carregados com sucesso via:', successUrl.includes('allorigins') ? 'AllOrigins' : url.includes('cors-anywhere') ? 'CORS Anywhere' : url.includes('codetabs') ? 'CodeTabs' : 'Direto');
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`❌ Falhou com proxy ${i + 1}:`, error.message);
+                continue;
+            }
+        }
+        
+        if (!csvText) {
+            console.error('❌ Todos os proxies CORS falharam');
             return false;
         }
         
+        console.log('📋 CSV carregado, iniciando processamento progressivo...');
+        
+        // Processa e renderiza progressivamente
+        const validatedGifts = await parseCSVToGifts(csvText, true); // true = renderizar conforme valida
+        
+        // Salva no cache após processamento completo
+        setTimeout(() => {
+            const dataToCache = {
+                presentes: gifts,
+                lastUpdate: new Date().getTime(),
+                source: successUrl
+            };
+            localStorage.setItem('giftsData', JSON.stringify(dataToCache));
+            localStorage.setItem('lastSyncTime', new Date().getTime().toString());
+            lastSyncTime = new Date().getTime();
+            
+            console.log('💾 Dados salvos no cache (' + gifts.length + ' presentes)');
+        }, 2000); // Delay para garantir que todos os itens foram processados
+        
+        return true;
+        
     } catch (error) {
-        console.error('Erro no carregamento progressivo:', error);
+        console.error('❌ Erro no carregamento progressivo:', error);
         return false;
     }
 }
@@ -157,16 +195,50 @@ async function loadDataWithSync() {
             }
         }
         
-        // Tenta carregar da planilha Google Sheets
-        const response = await fetch(SHEETS_CONFIG.csvUrl + '&t=' + new Date().getTime(), {
-            method: 'GET',
-            headers: {
-                'Accept': 'text/plain, text/csv, */*'
-            }
-        });
+        // Tenta carregar da planilha Google Sheets com múltiplos proxies
+        const csvUrls = SHEETS_CONFIG.csvUrls;
+        let csvText = null;
         
-        if (response.ok) {
-            const csvText = await response.text();
+        for (let i = 0; i < csvUrls.length; i++) {
+            const url = csvUrls[i];
+            
+            try {
+                console.log(`🔄 Sync tentativa ${i + 1}/${csvUrls.length}`);
+                
+                const response = await fetch(url + '&t=' + new Date().getTime(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/plain, text/csv, */*'
+                    }
+                });
+                
+                if (response.ok) {
+                    const responseText = await response.text();
+                    
+                    // Se usar AllOrigins com JSON wrapper, extrai o content
+                    if (url.includes('api.allorigins.win/get')) {
+                        try {
+                            const jsonData = JSON.parse(responseText);
+                            csvText = jsonData.contents;
+                        } catch (e) {
+                            csvText = responseText;
+                        }
+                    } else {
+                        csvText = responseText;
+                    }
+                    
+                    // Verifica se o CSV é válido
+                    if (csvText && csvText.includes(',') && csvText.split('\n').length > 1) {
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`❌ Sync falhou com proxy ${i + 1}`);
+                continue;
+            }
+        }
+        
+        if (csvText) {
             const parsedGifts = await parseCSVToGifts(csvText);
             
             if (parsedGifts.length > 0) {
