@@ -111,7 +111,7 @@ async function loadDataWithSync() {
         
         if (response.ok) {
             const csvText = await response.text();
-            const parsedGifts = await parseCSVToGifts(csvText);
+            const parsedGifts = parseCSVToGifts(csvText);
             
             if (parsedGifts.length > 0) {
                 gifts = parsedGifts;
@@ -176,11 +176,10 @@ async function loadDataWithSync() {
 /**
  * Converte CSV do Google Sheets para formato de presentes
  */
-async function parseCSVToGifts(csvText) {
+function parseCSVToGifts(csvText) {
     try {
         const lines = csvText.split('\n');
         const gifts = [];
-        const validationPromises = [];
         
         // Pula a primeira linha (cabeçalho) e processa as demais
         for (let i = 1; i < lines.length; i++) {
@@ -191,15 +190,11 @@ async function parseCSVToGifts(csvText) {
             const columns = parseCSVLine(line);
             
             if (columns.length >= 3 && columns[0] && columns[1] && columns[2]) {
-                // Gera ID único baseado no título para evitar duplicatas
-                const uniqueId = generateUniqueId(columns[0].trim());
-                
                 const gift = {
-                    id: uniqueId,
+                    id: 'sheet_' + i + '_' + Date.now(),
                     title: columns[0].trim(),
                     productUrl: columns[1].trim(),
                     imageUrl: columns[2].trim(),
-                    order: columns[3] ? parseInt(columns[3].trim()) || 999 : 999, // Coluna D para ordem
                     timestamp: new Date().getTime(),
                     createdAt: new Date().toISOString(),
                     source: 'google_sheets'
@@ -207,38 +202,12 @@ async function parseCSVToGifts(csvText) {
                 
                 // Valida URLs básicas
                 if (isValidUrl(gift.productUrl) && isValidUrl(gift.imageUrl)) {
-                    // Adiciona promessa de validação de imagem
-                    validationPromises.push(
-                        validateImage(gift.imageUrl).then(isValid => ({
-                            gift,
-                            isValid
-                        }))
-                    );
+                    gifts.push(gift);
                 } else {
                     console.warn('URLs inválidas na linha ' + (i + 1) + ':', gift);
                 }
             }
         }
-        
-        // Aguarda validação de todas as imagens
-        console.log(`Validando ${validationPromises.length} imagens de produtos...`);
-        updateLoadingState('Validando imagens dos produtos...');
-        
-        const validationResults = await Promise.all(validationPromises);
-        
-        // Filtra apenas presentes com imagens válidas
-        validationResults.forEach(result => {
-            if (result.isValid) {
-                gifts.push(result.gift);
-            } else {
-                console.warn('Imagem inválida ou não carregou:', result.gift.title, result.gift.imageUrl);
-            }
-        });
-        
-        console.log(`${gifts.length} produtos com imagens válidas carregados de ${validationResults.length} total`);
-        
-        // Ordena pela coluna "Ordem" (crescente)
-        gifts.sort((a, b) => a.order - b.order);
         
         return gifts;
         
@@ -274,42 +243,6 @@ function parseCSVLine(line) {
 }
 
 /**
- * Gera ID único baseado no título do produto
- */
-function generateUniqueId(title) {
-    // Remove acentos e caracteres especiais, converte para minúsculo
-    const cleanTitle = title
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-    
-    // Adiciona hash simples do título para garantir unicidade
-    let hash = 0;
-    for (let i = 0; i < title.length; i++) {
-        const char = title.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    
-    return `gift-${cleanTitle}-${Math.abs(hash)}`;
-}
-
-/**
- * Valida se uma imagem pode ser carregada
- */
-function validateImage(url) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = url;
-    });
-}
-
-/**
  * Verifica se uma URL é válida
  */
 function isValidUrl(string) {
@@ -340,16 +273,6 @@ function loadFallbackData() {
 }
 
 /**
- * Atualiza o estado de carregamento
- */
-function updateLoadingState(message) {
-    const loadingText = loadingOverlay?.querySelector('.loading-text');
-    if (loadingText) {
-        loadingText.textContent = message;
-    }
-}
-
-/**
  * Esconde a animação de loading
  */
 function hideLoading() {
@@ -366,9 +289,6 @@ function renderGifts() {
     
     gifts.forEach(gift => {
         const giftCard = createGiftCard(gift);
-        // Define ID único para identificação
-        giftCard.setAttribute('data-gift-id', generateUniqueId(gift.title));
-        giftCard.setAttribute('data-order', gift.order);
         giftsGrid.appendChild(giftCard);
     });
 }
@@ -377,25 +297,9 @@ function renderGifts() {
  * Renderiza presentes de forma progressiva para melhor performance
  */
 function renderGiftsProgressively(giftsList) {
-    // Verifica duplicatas - coleta IDs dos presentes já renderizados
-    const existingGiftIds = new Set();
-    const existingCards = giftsGrid.querySelectorAll('.gift-card');
-    existingCards.forEach(card => {
-        const giftId = card.getAttribute('data-gift-id');
-        if (giftId) {
-            existingGiftIds.add(giftId);
-        }
-    });
-    
-    // Filtra apenas presentes novos (não duplicados)
-    const newGifts = giftsList.filter(gift => {
-        const giftId = generateUniqueId(gift.title);
-        return !existingGiftIds.has(giftId);
-    });
-    
-    if (newGifts.length === 0) {
-        console.log('Nenhum presente novo para renderizar');
-        return;
+    // Limpa apenas se for uma nova lista
+    if (giftsGrid.children.length === 0 || giftsList !== gifts) {
+        giftsGrid.innerHTML = '';
     }
     
     // Renderiza em lotes pequenos para não bloquear a UI
@@ -403,21 +307,16 @@ function renderGiftsProgressively(giftsList) {
     let currentIndex = 0;
     
     function renderBatch() {
-        const endIndex = Math.min(currentIndex + batchSize, newGifts.length);
+        const endIndex = Math.min(currentIndex + batchSize, giftsList.length);
         
         for (let i = currentIndex; i < endIndex; i++) {
-            const gift = newGifts[i];
+            const gift = giftsList[i];
             const giftCard = createGiftCard(gift);
-            
-            // Define ID único para identificação
-            giftCard.setAttribute('data-gift-id', generateUniqueId(gift.title));
-            
-            // Insere o card na posição correta baseada na ordem
-            insertGiftCardInOrder(giftCard, gift.order);
             
             // Adiciona com animação suave
             giftCard.style.opacity = '0';
             giftCard.style.transform = 'translateY(20px)';
+            giftsGrid.appendChild(giftCard);
             
             // Anima entrada após um pequeno delay
             setTimeout(() => {
@@ -430,50 +329,13 @@ function renderGiftsProgressively(giftsList) {
         currentIndex = endIndex;
         
         // Continue renderizando se há mais itens
-        if (currentIndex < newGifts.length) {
+        if (currentIndex < giftsList.length) {
             setTimeout(renderBatch, 200); // Pequena pausa entre lotes
         }
     }
     
     // Inicia renderização progressiva
     renderBatch();
-}
-
-/**
- * Insere um card de presente na posição correta baseada na ordem
- */
-function insertGiftCardInOrder(giftCard, order) {
-    const existingCards = Array.from(giftsGrid.children);
-    
-    // Se não há cards existentes, simplesmente adiciona
-    if (existingCards.length === 0) {
-        giftsGrid.appendChild(giftCard);
-        return;
-    }
-    
-    // Encontra a posição correta para inserir baseada na ordem
-    let insertPosition = existingCards.length; // Por padrão, adiciona no final
-    
-    for (let i = 0; i < existingCards.length; i++) {
-        const existingCard = existingCards[i];
-        const existingOrder = existingCard.getAttribute('data-order');
-        
-        // Se o card existente tem ordem maior, insere antes dele
-        if (existingOrder && parseInt(existingOrder) > order) {
-            insertPosition = i;
-            break;
-        }
-    }
-    
-    // Define a ordem no card para futuras comparações
-    giftCard.setAttribute('data-order', order);
-    
-    // Insere na posição correta
-    if (insertPosition >= existingCards.length) {
-        giftsGrid.appendChild(giftCard);
-    } else {
-        giftsGrid.insertBefore(giftCard, existingCards[insertPosition]);
-    }
 }
 
 /**
@@ -513,16 +375,9 @@ function createGiftCard(gift) {
  * Atualiza a visibilidade do estado vazio
  */
 function updateEmptyState() {
-    const emptyStateTitle = emptyState.querySelector('h3');
-    const emptyStateText = emptyState.querySelector('p');
-    
     if (gifts.length === 0) {
         emptyState.classList.remove('hidden');
         giftsGrid.style.display = 'none';
-        
-        // Atualiza mensagem para indicar carregamento/validação
-        emptyStateTitle.textContent = 'Lista sendo preparada com carinho';
-        emptyStateText.textContent = 'Estamos carregando e validando as imagens dos produtos. Só exibimos presentes com fotos válidas para garantir a melhor experiência!';
     } else {
         emptyState.classList.add('hidden');
         giftsGrid.style.display = 'grid';
@@ -586,7 +441,7 @@ async function tryAlternativeLoad() {
             
             if (response.ok) {
                 const csvText = await response.text();
-                const parsedGifts = await parseCSVToGifts(csvText);
+                const parsedGifts = parseCSVToGifts(csvText);
                 
                 if (parsedGifts.length > 0) {
                     gifts = parsedGifts;
@@ -614,7 +469,7 @@ async function tryAlternativeLoad() {
 }
 
 // Service Worker para cache (funcionalidade PWA básica)
-if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
@@ -624,6 +479,4 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
                 console.log('Falha no registro do SW:', registrationError);
             });
     });
-} else if (window.location.protocol === 'file:') {
-    console.log('Service Worker não pode ser registrado em protocolo file://. Use um servidor HTTP para funcionalidade PWA completa.');
 }
