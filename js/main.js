@@ -36,29 +36,85 @@ async function loadDataProgressively() {
         const localData = localStorage.getItem('giftsData');
         if (localData) {
             const parsedData = JSON.parse(localData);
-            gifts = parsedData.presentes || [];
+            const cachedGifts = parsedData.presentes || [];
             
-            if (gifts.length > 0) {
-                console.log('Carregando ' + gifts.length + ' itens do cache local...');
-                renderGiftsProgressively(gifts);
+            if (cachedGifts.length > 0) {
+                console.log('Carregando ' + cachedGifts.length + ' itens do cache local...');
+                // Renderiza cache progressivamente primeiro
+                renderGiftsProgressively(cachedGifts);
                 updateEmptyState();
                 updateSyncIndicator(true);
             }
         }
         
-        // Em paralelo, busca dados atualizados do Google Sheets
-        const success = await loadDataWithSync();
-        if (success && gifts.length > 0) {
-            console.log('Dados atualizados do Google Sheets recebidos!');
-            renderGiftsProgressively(gifts);
+        // Em paralelo, busca dados atualizados do Google Sheets com renderização progressiva
+        const success = await loadDataWithProgressiveRendering();
+        
+        if (success) {
             updateEmptyState();
             updateSyncIndicator(true);
+        } else {
+            updateSyncIndicator(false);
+        }
+        
+        // Remove loading overlay após carregamento inicial
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Erro no carregamento progressivo:', error);
+        hideLoading();
+        updateSyncIndicator(false);
+    }
+}
+
+/**
+ * Carrega dados com renderização progressiva item por item
+ */
+async function loadDataWithProgressiveRendering() {
+    try {
+        console.log('🔄 Iniciando carregamento progressivo...');
+        
+        // Limpa lista atual para novo carregamento
+        gifts = [];
+        giftsGrid.innerHTML = '';
+        
+        // Tenta carregar da planilha Google Sheets
+        const response = await fetch(SHEETS_CONFIG.csvUrl + '&t=' + new Date().getTime(), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/plain, text/csv, */*'
+            }
+        });
+        
+        if (response.ok) {
+            const csvText = await response.text();
+            console.log('📋 CSV carregado, iniciando processamento progressivo...');
+            
+            // Processa e renderiza progressivamente
+            const validatedGifts = await parseCSVToGifts(csvText, true); // true = renderizar conforme valida
+            
+            // Salva no cache após processamento completo
+            setTimeout(() => {
+                const dataToCache = {
+                    presentes: gifts,
+                    lastUpdate: new Date().getTime()
+                };
+                localStorage.setItem('giftsData', JSON.stringify(dataToCache));
+                localStorage.setItem('lastSyncTime', new Date().getTime().toString());
+                lastSyncTime = new Date().getTime();
+                
+                console.log('💾 Dados salvos no cache (' + gifts.length + ' presentes)');
+            }, 2000); // Delay para garantir que todos os itens foram processados
+            
+            return true;
+        } else {
+            console.log('Erro ao buscar dados do Google Sheets');
+            return false;
         }
         
     } catch (error) {
-        console.log('Erro no carregamento progressivo:', error);
-        updateEmptyState();
-        updateSyncIndicator(false);
+        console.error('Erro no carregamento progressivo:', error);
+        return false;
     }
 }
 
@@ -175,12 +231,13 @@ async function loadDataWithSync() {
 
 /**
  * Converte CSV do Google Sheets para formato de presentes
+ * Agora renderiza cada item conforme é validado
  */
-async function parseCSVToGifts(csvText) {
+async function parseCSVToGifts(csvText, renderAsValidated = false) {
     try {
         const lines = csvText.split('\n');
         const gifts = [];
-        const validationPromises = [];
+        const validatedGifts = [];
         
         // Pula a primeira linha (cabeçalho) e processa as demais
         for (let i = 1; i < lines.length; i++) {
@@ -207,38 +264,53 @@ async function parseCSVToGifts(csvText) {
                 
                 // Valida URLs básicas
                 if (isValidUrl(gift.productUrl) && isValidUrl(gift.imageUrl)) {
-                    // Adiciona promessa de validação de imagem
-                    validationPromises.push(
-                        validateImage(gift.imageUrl).then(isValid => ({
-                            gift,
-                            isValid
-                        }))
-                    );
+                    gifts.push(gift);
+                    
+                    // Se deve renderizar conforme valida, processa individualmente
+                    if (renderAsValidated) {
+                        validateAndRenderGift(gift, validatedGifts);
+                    }
                 } else {
                     console.warn('URLs inválidas na linha ' + (i + 1) + ':', gift);
                 }
             }
         }
         
-        // Aguarda validação de todas as imagens
-        console.log(`Validando ${validationPromises.length} imagens de produtos...`);
-        updateLoadingState('Validando imagens dos produtos...');
+        // Se não está renderizando conforme valida, faz validação em lote
+        if (!renderAsValidated) {
+            console.log(`Validando ${gifts.length} imagens de produtos...`);
+            updateLoadingState('Validando imagens dos produtos...');
+            
+            const validationPromises = gifts.map(gift =>
+                validateImage(gift.imageUrl).then(isValid => ({
+                    gift,
+                    isValid
+                }))
+            );
+            
+            const validationResults = await Promise.all(validationPromises);
+            
+            // Filtra apenas presentes com imagens válidas
+            const validGifts = [];
+            validationResults.forEach(result => {
+                if (result.isValid) {
+                    validGifts.push(result.gift);
+                } else {
+                    console.warn('Imagem inválida ou não carregou:', result.gift.title, result.gift.imageUrl);
+                }
+            });
+            
+            console.log(`${validGifts.length} produtos com imagens válidas carregados de ${validationResults.length} total`);
+            
+            // Ordena pela coluna "Ordem" (crescente)
+            validGifts.sort((a, b) => a.order - b.order);
+            
+            return validGifts;
+        }
         
-        const validationResults = await Promise.all(validationPromises);
-        
-        // Filtra apenas presentes com imagens válidas
-        validationResults.forEach(result => {
-            if (result.isValid) {
-                gifts.push(result.gift);
-            } else {
-                console.warn('Imagem inválida ou não carregou:', result.gift.title, result.gift.imageUrl);
-            }
-        });
-        
-        console.log(`${gifts.length} produtos com imagens válidas carregados de ${validationResults.length} total`);
-        
-        // Ordena pela coluna "Ordem" (crescente)
-        gifts.sort((a, b) => a.order - b.order);
+        // Para renderização progressiva, retorna array vazio inicialmente
+        // Os itens serão adicionados conforme validados
+        return validatedGifts;
         
         return gifts;
         
@@ -246,6 +318,102 @@ async function parseCSVToGifts(csvText) {
         console.error('Erro ao fazer parse do CSV:', error);
         return [];
     }
+}
+
+/**
+ * Valida e renderiza um presente individual conforme é processado
+ */
+async function validateAndRenderGift(gift, validatedGifts) {
+    try {
+        // Adiciona delay progressivo para efeito escalonado
+        const delay = validatedGifts.length * 200; // 200ms entre cada item
+        
+        setTimeout(async () => {
+            console.log(`Validando: ${gift.title}...`);
+            
+            const isValid = await validateImage(gift.imageUrl);
+            
+            if (isValid) {
+                // Adiciona à lista de validados
+                validatedGifts.push(gift);
+                gifts.push(gift);
+                
+                // Renderiza o item imediatamente
+                renderSingleGift(gift);
+                
+                console.log(`✅ ${gift.title} - Imagem válida, adicionado à lista`);
+                
+                // Reordena todos os itens após adicionar novo
+                setTimeout(() => reorderAllGifts(), 100);
+            } else {
+                console.warn(`❌ ${gift.title} - Imagem inválida, ignorado`);
+            }
+            
+            // Atualiza estado da página
+            updateEmptyState();
+        }, delay);
+        
+    } catch (error) {
+        console.error('Erro ao validar presente:', gift.title, error);
+    }
+}
+
+/**
+ * Renderiza um único presente na página
+ */
+function renderSingleGift(gift) {
+    // Verifica se já existe na página
+    const existingCard = giftsGrid.querySelector(`[data-gift-id="${generateUniqueId(gift.title)}"]`);
+    if (existingCard) {
+        console.log('Item já existe na página:', gift.title);
+        return;
+    }
+    
+    const giftCard = createGiftCard(gift);
+    
+    // Define atributos para identificação e ordenação
+    giftCard.setAttribute('data-gift-id', generateUniqueId(gift.title));
+    giftCard.setAttribute('data-order', gift.order);
+    
+    // Adiciona ao final inicialmente (será reordenado depois)
+    giftsGrid.appendChild(giftCard);
+    
+    // Animação de entrada
+    giftCard.style.opacity = '0';
+    giftCard.style.transform = 'translateY(30px) scale(0.95)';
+    giftCard.style.transition = 'all 0.4s ease';
+    
+    // Trigger da animação
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            giftCard.style.opacity = '1';
+            giftCard.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+    
+    console.log(`🎁 Renderizado: ${gift.title} (ordem: ${gift.order})`);
+}
+
+/**
+ * Reordena todos os presentes baseado na coluna "Ordem"
+ */
+function reorderAllGifts() {
+    const cards = Array.from(giftsGrid.children);
+    
+    // Ordena os cards pela ordem definida
+    cards.sort((a, b) => {
+        const orderA = parseInt(a.getAttribute('data-order')) || 999;
+        const orderB = parseInt(b.getAttribute('data-order')) || 999;
+        return orderA - orderB;
+    });
+    
+    // Remove e re-adiciona na ordem correta com animação suave
+    cards.forEach((card, index) => {
+        card.style.transition = 'all 0.3s ease';
+        giftsGrid.appendChild(card);
+    });
+    
+    console.log('🔄 Lista reordenada');
 }
 
 /**
